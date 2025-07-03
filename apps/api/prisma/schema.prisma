@@ -1,0 +1,99 @@
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Asset {
+  id          String   @id @default(uuid())
+  userId      String   @default("00000000-0000-0000-0000-000000000001")
+  symbol      String   @unique
+  name        String?
+  assetType   String?
+  holdings    Holding[]
+  investments InvestmentTransaction[]
+
+  @@map("asset")
+}
+
+model Holding {
+  id                String              @id @default(uuid())
+  userId            String              @default("00000000-0000-0000-0000-000000000001")
+  assetId           String
+  source            String?
+  amount            Float
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  asset             Asset               @relation(fields: [assetId], references: [id])
+  movements         HoldingMovement[]
+  investments       InvestmentTransaction[]
+  investmentClosures InvestmentClosure[]
+
+  @@map("holdings")
+}
+
+model HoldingMovement {
+  id        String   @id @default(uuid())
+  userId    String   @default("00000000-0000-0000-0000-000000000001")
+  holdingId String
+  direction String
+  amount    Float
+  reason    String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+  holding   Holding  @relation(fields: [holdingId], references: [id])
+
+  @@map("holding_movements")
+}
+
+model Investment {
+  id           String                  @id @default(uuid())
+  userId       String                  @default("00000000-0000-0000-0000-000000000001")
+  name         String?
+  description  String?
+  investedAt   DateTime                @default(now())
+  closedAt     DateTime?
+  status       String                  @default("OPEN")
+  metadata     Json?
+  transactions InvestmentTransaction[]
+  closures     InvestmentClosure[]
+
+  @@map("investment")
+}
+
+model InvestmentTransaction {
+  id              String   @id @default(uuid())
+  userId          String   @default("00000000-0000-0000-0000-000000000001")
+  investmentId    String
+  assetId         String
+  direction       String
+  amount          Float
+  pricePerUnit    Float?
+  currency        String?
+  relatedHoldingId String?
+  createdAt       DateTime @default(now())
+  investment      Investment @relation(fields: [investmentId], references: [id])
+  asset           Asset      @relation(fields: [assetId], references: [id])
+  relatedHolding  Holding?   @relation(fields: [relatedHoldingId], references: [id])
+
+  @@map("investment_transactions")
+}
+
+model InvestmentClosure {
+  id           String   @id @default(uuid())
+  userId       String   @default("00000000-0000-0000-0000-000000000001")
+  investmentId String
+  profit       Float?
+  notes        String?
+  reinvestedTo String?
+  createdAt    DateTime @default(now())
+  investment   Investment @relation(fields: [investmentId], references: [id])
+  reinvested   Holding?   @relation(fields: [reinvestedTo], references: [id])
+
+  @@map("investment_closures")
+}
