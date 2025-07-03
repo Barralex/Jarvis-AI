@@ -6,4 +6,4 @@ This file lists commands that Gemini is pre-approved to execute without explicit
 - `git push`
 
 ## Other Commands
-
+- `node index.js &` (in `apps/api` directory)
